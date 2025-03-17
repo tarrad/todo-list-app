@@ -4,7 +4,6 @@ class TaskDTO {
     this.title = task.title;
     this.description = task.description;
     this.completed = task.completed;
-    this.dueDate = task.dueDate;
   }
 
   static fromTask(task) {

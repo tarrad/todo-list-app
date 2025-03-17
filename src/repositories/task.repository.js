@@ -37,23 +37,16 @@ class TaskRepository extends BaseRepository {
     }
 
     try {
-      // Update with version check and lock
+      // Update with version check
       const updatedTask = await this._model.findOneAndUpdate(
         {
           _id: taskId,
-          version: currentTask.version, // Only update if version matches
-          // Also ensure the lock hasn't changed
-          $or: [
-            { lockedBy: null },
-            { lockedBy: userId }
-          ]
+          version: currentTask.version // Only update if version matches
         },
         {
           $set: {
             ...updateData,
-            version: currentTask.version + 1, // Increment version
-            lockedBy: userId,
-            lockTimeout: new Date(Date.now() + TIME.LOCK_TIMEOUT)
+            version: currentTask.version + 1 // Increment version
           }
         },
         { new: true }
@@ -62,9 +55,11 @@ class TaskRepository extends BaseRepository {
       if (!updatedTask) {
         // If update failed, release the lock
         await this.lockingService.releaseLock(taskId, userId);
-        throw new Error('Failed to update task - version mismatch or lock conflict');
+        throw new Error('Failed to update task - version mismatch');
       }
 
+      // Release the Redis lock after successful update
+      await this.lockingService.releaseLock(taskId, userId);
       return updatedTask;
     } catch (error) {
       // Ensure lock is released in case of any error
@@ -87,6 +82,8 @@ class TaskRepository extends BaseRepository {
         await this.lockingService.releaseLock(taskId, userId);
         return null;
       }
+      // Release the Redis lock after successful delete
+      await this.lockingService.releaseLock(taskId, userId);
       return result;
     } catch (error) {
       // Ensure lock is released in case of any error
@@ -96,16 +93,8 @@ class TaskRepository extends BaseRepository {
   }
 
   async isTaskLocked(id) {
-    // Check both Redis and MongoDB locks
-    const [redisLocked, mongoLocked] = await Promise.all([
-      this.lockingService.isLocked(id),
-      this._model.findOne({ _id: id, lockedBy: { $ne: null } })
-    ]);
-
-    return redisLocked || mongoLocked;
+    return this.lockingService.isLocked(id);
   }
-
-  
 }
 
 module.exports = TaskRepository; 

@@ -3,33 +3,21 @@ const mongoose = require('mongoose');
 const taskSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, 'Title is required'],
-    trim: true,
-    maxlength: 100
+    required: true,
+    trim: true
   },
   description: {
     type: String,
-    trim: true,
-    maxlength: 500
+    trim: true
   },
   completed: {
     type: Boolean,
     default: false
   },
-  dueDate: {
-    type: Date
-  },
-  lockedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  lockTimeout: {
-    type: Date
-  },
   version: {
     type: Number,
-    default: 1
-  }
+    default: 0
+  },
 }, {
   timestamps: true
 });
