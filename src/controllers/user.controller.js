@@ -106,66 +106,7 @@ class UserController extends BaseController {
     }
   }
 
-  // GET /api/users/me
-  async getCurrentUser(req, res) {
-    try {
-      const user = await this._userRepository.findById(req.user._id);
-      if (!user) {
-        return res.status(404).json(
-          this.error('User not found', 404)
-        );
-      }
-
-      return res.json(
-        this.ok({
-          id: user._id,
-          email: user.email,
-          name: user.name
-        })
-      );
-    } catch (error) {
-      return res.status(500).json(this.handleError(error));
-    }
-  }
-
-  // PUT /api/users/me
-  async updateCurrentUser(req, res) {
-    try {
-      const { name, email } = req.body;
-
-      // Basic validation
-      if (!name && !email) {
-        return res.status(400).json(
-          this.error('At least one field (name or email) is required', 400)
-        );
-      }
-
-      // Check if email is being changed and if it's already taken
-      if (email && email !== req.user.email) {
-        const existingUser = await this._userRepository.findByEmail(email);
-        if (existingUser) {
-          return res.status(400).json(
-            this.error('Email already registered', 400)
-          );
-        }
-      }
-
-      const updatedUser = await this._userRepository.update(
-        req.user._id,
-        { name, email }
-      );
-
-      return res.json(
-        this.ok({
-          id: updatedUser._id,
-          email: updatedUser.email,
-          name: updatedUser.name
-        })
-      );
-    } catch (error) {
-      return res.status(400).json(this.handleError(error));
-    }
-  }
+  
 }
 
 module.exports = UserController; 

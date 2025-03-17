@@ -10,8 +10,5 @@ const userController = controllerFactory.createUserController(userRepository);
 router.post('/register', userController.register.bind(userController));
 router.post('/login', userController.login.bind(userController));
 
-// Protected routes
-router.get('/me', authenticateToken, userController.getCurrentUser.bind(userController));
-router.put('/me', authenticateToken, userController.updateCurrentUser.bind(userController));
 
 module.exports = router; 

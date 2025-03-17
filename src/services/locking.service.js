@@ -9,11 +9,13 @@ class LockingService {
       return LockingService.instance;
     }
 
+    this.redisClient = redisClient;
+    
     // Subscribe to key space notifications
-    redisClient.subscribe('__keyevent@0__:expired');
+    this.redisClient.subscribe('__keyevent@0__:expired');
     
     // Handle expired keys
-    redisClient.onMessage(async (channel, key) => {
+    this.redisClient.onMessage(async (channel, key) => {
       if (channel === '__keyevent@0__:expired' && key.startsWith('lock:')) {
         const resourceId = key.replace('lock:', '');
         console.log(`Lock expired for key: ${key}`);
@@ -39,44 +41,43 @@ class LockingService {
     LockingService.instance = this;
   }
 
+  static getInstance() {
+    if (!LockingService.instance) {
+      LockingService.instance = new LockingService();
+    }
+    return LockingService.instance;
+  }
+
   // Lock a resource with NX (Not Exists) and expiration
-  async acquireLock(resourceId, userId, timeoutSeconds = TIME.LOCK_TIMEOUT / 1000) {
-    const lockKey = `lock:${resourceId}`;
+  async acquireLock(taskId, userId) {
+    const lockKey = `task:${taskId}:lock`;
     const lockValue = userId.toString();
-    
-    // Try to set the lock with NX (only if it doesn't exist)
-    const result = await redisClient.setex(lockKey, timeoutSeconds, lockValue);
+    const lockTimeout = TIME.LOCK_TIMEOUT / 1000; // Convert to seconds for Redis
+
+    // Try to set the lock with NX (only if not exists) and EX (expiration)
+    const result = await this.redisClient.set(lockKey, lockValue, 'NX', 'EX', lockTimeout);
     return result === 'OK';
   }
 
   // Release a lock
-  async releaseLock(resourceId, userId) {
-    const lockKey = `lock:${resourceId}`;
-    
-    // Get the current lock value
-    const currentLock = await redisClient.get(lockKey);
-    
-    // Only unlock if the lock belongs to this user
-    if (currentLock === userId.toString()) {
-      await redisClient.del(lockKey);
+  async releaseLock(taskId, userId) {
+    const lockKey = `task:${taskId}:lock`;
+    const lockValue = await this.redisClient.get(lockKey);
+
+    // Only release if the lock is owned by the same user
+    if (lockValue === userId.toString()) {
+      await this.redisClient.del(lockKey);
       return true;
     }
-    
     return false;
   }
 
   // Check if a resource is locked
-  async isLocked(resourceId) {
-    const lockKey = `lock:${resourceId}`;
-    const lockValue = await redisClient.get(lockKey);
+  async isLocked(taskId) {
+    const lockKey = `task:${taskId}:lock`;
+    const lockValue = await this.redisClient.get(lockKey);
     return lockValue !== null;
-  }
-
-  // Get the user who locked the resource
-  async getLockOwner(resourceId) {
-    const lockKey = `lock:${resourceId}`;
-    return await redisClient.get(lockKey);
   }
 }
 
-module.exports = new LockingService(); 
+module.exports = LockingService.getInstance(); 
