@@ -1,6 +1,5 @@
 const redisClient = require('../infrastructure/redis.client');
 const { TIME } = require('../config/constants');
-const Task = require('../models/task.model');
 
 class LockingService {
   constructor() {

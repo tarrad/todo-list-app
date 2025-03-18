@@ -1,10 +1,7 @@
-const BaseController = require('./base.controller');
-const { TIME } = require('../config/constants');
 const TaskDTO = require('../dtos/task.dto');
 
-class TaskController extends BaseController {
+class TaskController {
   constructor({ taskRepository, socketService }) {
-    super();
     this._taskRepository = taskRepository;
     this._socketService = socketService;
   }

@@ -1,37 +1,24 @@
-const BaseController = require('./base.controller');
 const jwt = require('jsonwebtoken');
 
-class UserController extends BaseController {
+class UserController {
   constructor(userRepository) {
-    super();
     this._userRepository = userRepository;
   }
 
-  // POST /api/auth/register
   async register(req, res) {
     try {
-      const { email, password, name } = req.body;
+      const { email, password } = req.body;
 
-      // Basic validation
-      if (!email || !password || !name) {
-        return res.status(400).json(
-          this.error('Email, password and name are required', 400)
-        );
-      }
-
-      // Check if email already exists
-      const existingUser = await this._userRepository.findByEmail(email);
-      if (existingUser) {
-        return res.status(400).json(
-          this.error('Email already registered', 400)
-        );
+      // Check if user already exists
+      const exists = await this._userRepository.exists(email);
+      if (exists) {
+        return res.status(400).json({ error: 'User already exists' });
       }
 
       // Create new user
       const user = await this._userRepository.create({
         email,
-        password,
-        name
+        password // Password will be hashed by the model's pre-save hook
       });
 
       // Generate JWT token
@@ -41,47 +28,33 @@ class UserController extends BaseController {
         { expiresIn: '24h' }
       );
 
-      return res.status(201).json(
-        this.ok({
-          user: {
-            id: user._id,
-            email: user.email,
-            name: user.name
-          },
-          token
-        })
-      );
+      res.status(201).json({
+        token,
+        user: {
+          id: user._id,
+          email: user.email
+        }
+      });
     } catch (error) {
-      return res.status(400).json(this.handleError(error));
+      console.error('Registration error:', error);
+      res.status(500).json({ error: 'Failed to register user' });
     }
   }
 
-  // POST /api/auth/login
   async login(req, res) {
     try {
       const { email, password } = req.body;
 
-      // Basic validation
-      if (!email || !password) {
-        return res.status(400).json(
-          this.error('Email and password are required', 400)
-        );
-      }
-
-      // Find user and include password field
+      // Find user by email
       const user = await this._userRepository.findByEmail(email);
       if (!user) {
-        return res.status(401).json(
-          this.error('Invalid email or password', 401)
-        );
+        return res.status(401).json({ error: 'Invalid credentials' });
       }
 
       // Check password
-      const isPasswordValid = await user.comparePassword(password);
-      if (!isPasswordValid) {
-        return res.status(401).json(
-          this.error('Invalid email or password', 401)
-        );
+      const isValid = await user.comparePassword(password);
+      if (!isValid) {
+        return res.status(401).json({ error: 'Invalid credentials' });
       }
 
       // Generate JWT token
@@ -91,22 +64,18 @@ class UserController extends BaseController {
         { expiresIn: '24h' }
       );
 
-      return res.json(
-        this.ok({
-          user: {
-            id: user._id,
-            email: user.email,
-            name: user.name
-          },
-          token
-        })
-      );
+      res.json({
+        token,
+        user: {
+          id: user._id,
+          email: user.email
+        }
+      });
     } catch (error) {
-      return res.status(400).json(this.handleError(error));
+      console.error('Login error:', error);
+      res.status(500).json({ error: 'Failed to login' });
     }
   }
-
-  
 }
 
 module.exports = UserController; 

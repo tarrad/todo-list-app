@@ -1,11 +1,8 @@
-const BaseRepository = require('./base.repository');
 const Task = require('../models/task.model');
-const { TIME, MONGO_OPTIONS } = require('../config/constants');
 const lockingService = require('../services/locking.service');
 
-class TaskRepository extends BaseRepository {
+class TaskRepository {
   constructor() {
-    super();
     this._model = Task;
     this.lockingService = lockingService;
   }
