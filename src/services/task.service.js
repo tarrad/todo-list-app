@@ -1,10 +1,12 @@
 const taskRepository = require('../repositories/task.repository');
 const lockingService = require('../services/locking.service');
+const socketService = require('../services/socket.service');
 
 class TaskService {
   constructor() {
     this._taskRepository = taskRepository;
     this._lockingService = lockingService;
+    this._socketService = socketService;
   }
 
   async getAllTasks() {
@@ -12,7 +14,9 @@ class TaskService {
   }
 
   async createTask(taskData) {
-    return this._taskRepository.create(taskData);
+    const task = await this._taskRepository.create(taskData);
+    this._socketService.emitTaskCreated(task);
+    return task;
   }
 
   async updateTask(taskId, updateData, userId) {
@@ -30,6 +34,9 @@ class TaskService {
         return null;
       }
 
+      // Notify all users that the task is locked
+      this._socketService.emitTaskLocked(taskId, userId);
+
       // Update with version check
       const updatedTask = await this._taskRepository.update(
         taskId,
@@ -39,13 +46,18 @@ class TaskService {
         }
       );
 
+      await this._lockingService.releaseLock(taskId, userId);
       if (!updatedTask) {
-        await this._lockingService.releaseLock(taskId, userId);
         throw new Error('Failed to update task - version mismatch');
       }
 
-      // Release lock after successful update
-      await this._lockingService.releaseLock(taskId, userId);
+    
+      
+ 
+      
+      // Notify all users about the update
+      this._socketService.emitTaskUpdated(updatedTask);
+      
       return updatedTask;
     } catch (error) {
       // Ensure lock is released in case of any error
@@ -62,13 +74,18 @@ class TaskService {
     }
 
     try {
+      // Notify all users that the task is locked for deletion
+      this._socketService.emitTaskLocked(taskId, userId);
+
       const result = await this._taskRepository.delete(taskId);
+      await this._lockingService.releaseLock(taskId, userId);
       if (!result) {
-        await this._lockingService.releaseLock(taskId, userId);
         return null;
       }
-      // Release lock after successful delete
-      await this._lockingService.releaseLock(taskId, userId);
+      
+      // Notify all users that the task has been deleted
+      this._socketService.emitTaskDeleted(taskId);
+      
       return result;
     } catch (error) {
       // Ensure lock is released in case of any error

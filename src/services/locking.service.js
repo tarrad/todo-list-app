@@ -1,5 +1,5 @@
 const redisClient = require('../infrastructure/redis.client');
-const { TIME } = require('../config/constants');
+const socketService = require('./socket.service');
 
 class LockingService {
   constructor() {
@@ -8,6 +8,18 @@ class LockingService {
     }
     this.redisClient = redisClient;
     LockingService.instance = this;
+
+    // Enable key space notifications
+    this.redisClient.client.send_command('CONFIG', ['GET', 'notify-keyspace-events']);
+    
+    // Set up expiration event listener
+    this.redisClient.subscribe('__keyevent@0__:expired');
+    this.redisClient.onMessage((channel, key) => {
+      if (channel === '__keyevent@0__:expired' && key.startsWith('task:')) {
+        const taskId = key.replace('task:', '').replace(':lock', '');
+        socketService.emitTaskUnlocked(taskId);
+      }
+    });
   }
 
   static getInstance() {
@@ -21,10 +33,10 @@ class LockingService {
   async acquireLock(taskId, userId) {
     const lockKey = `task:${taskId}:lock`;
     const lockValue = userId.toString();
-    const lockTimeout = TIME.LOCK_TIMEOUT; // Convert to seconds for Redis
+    const lockTimeout = 30; // 30 seconds timeout
 
     // Try to set the lock with NX (only if not exists) and EX (expiration)
-    const result = await this.redisClient.set(lockKey, lockValue, 'NX', 'PX', lockTimeout);
+    const result = await this.redisClient.set(lockKey, lockValue, 'NX', 'EX', lockTimeout);
     return result === 'OK';
   }
 
@@ -36,6 +48,7 @@ class LockingService {
     // Only release if the lock is owned by the same user
     if (lockValue === userId.toString()) {
       await this.redisClient.del(lockKey);
+      socketService.emitTaskUnlocked(taskId);
       return true;
     }
     return false;
@@ -46,6 +59,11 @@ class LockingService {
     const lockKey = `task:${taskId}:lock`;
     const lockValue = await this.redisClient.get(lockKey);
     return lockValue !== null;
+  }
+
+  async getLockOwner(taskId) {
+    const lockKey = `task:${taskId}:lock`;
+    return await this.redisClient.get(lockKey);
   }
 }
 
