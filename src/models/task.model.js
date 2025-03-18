@@ -10,6 +10,16 @@ const taskSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  status: {
+    type: String,
+    enum: ['pending', 'in_progress', 'completed'],
+    default: 'pending'
+  },
+  lockedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
   completed: {
     type: Boolean,
     default: false

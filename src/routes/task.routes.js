@@ -9,7 +9,7 @@ const taskController = controllerFactory.taskController;
 router.use(authenticateToken);
 
 // Task routes
-router.get('/', taskController.getAllTasks.bind(taskController));
+router.get('/', taskController.getTasks.bind(taskController));
 router.post('/', taskController.createTask.bind(taskController));
 router.put('/:id', taskController.updateTask.bind(taskController));
 router.delete('/:id', taskController.deleteTask.bind(taskController));

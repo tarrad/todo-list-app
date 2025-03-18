@@ -1,13 +1,25 @@
 const TaskDTO = require('../dtos/task.dto');
+const TaskService = require('../services/task.service');
 
 class TaskController {
   constructor(taskService) {
+    if (TaskController.instance) {
+      return TaskController.instance;
+    }
+    TaskController.instance = this;
     this._taskService = taskService;
   }
 
-  async getAllTasks(req, res) {
+  static getInstance(taskService) {
+    if (!TaskController.instance) {
+      TaskController.instance = new TaskController(taskService);
+    }
+    return TaskController.instance;
+  }
+
+  async getTasks(req, res) {
     try {
-      const tasks = await this._taskService.getAllTasks();
+      const tasks = await this._taskService.getTasks();
       const taskDTOs = TaskDTO.fromTasks(tasks);
       res.json(taskDTOs);
     } catch (error) {
@@ -29,7 +41,11 @@ class TaskController {
 
   async updateTask(req, res) {
     try {
-      const task = await this._taskService.updateTask(req.params.id, req.body, req.user._id);
+      const task = await this._taskService.updateTask(
+        req.params.id,
+        req.user.id,
+        req.body
+      );
       if (!task) {
         return res.status(404).json({ error: 'Task not found' });
       }
@@ -46,10 +62,7 @@ class TaskController {
 
   async deleteTask(req, res) {
     try {
-      const task = await this._taskService.deleteTask(req.params.id, req.user._id);
-      if (!task) {
-        return res.status(404).json({ error: 'Task not found' });
-      }
+      await this._taskService.deleteTask(req.params.id, req.user.id);
       res.json({ message: 'Task deleted successfully' });
     } catch (error) {
       console.error('Error deleting task:', error);

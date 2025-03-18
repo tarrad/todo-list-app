@@ -1,103 +1,74 @@
 const taskRepository = require('../repositories/task.repository');
-const lockingService = require('../services/locking.service');
-const socketService = require('../services/socket.service');
+const socketService = require('./socket.service');
 
 class TaskService {
   constructor() {
-    this._taskRepository = taskRepository;
-    this._lockingService = lockingService;
-    this._socketService = socketService;
+    if (TaskService.instance) {
+      return TaskService.instance;
+    }
+    TaskService.instance = this;
   }
 
-  async getAllTasks() {
-    return this._taskRepository.findAllTasks();
+  static getInstance() {
+    if (!TaskService.instance) {
+      TaskService.instance = new TaskService();
+    }
+    return TaskService.instance;
   }
 
   async createTask(taskData) {
-    const task = await this._taskRepository.create(taskData);
-    this._socketService.emitTaskCreated(task);
+    const task = await taskRepository.createTask(taskData);
+    socketService.emitTaskCreated(task);
     return task;
   }
 
-  async updateTask(taskId, updateData, userId) {
-    // Try to acquire lock first
-    const lockAcquired = await this._lockingService.acquireLock(taskId, userId);
-    if (!lockAcquired) {
-      throw new Error('Task is locked by another user');
-    }
+  async getTasks() {
+    return await taskRepository.getTasks();
+  }
 
+  async updateTask(taskId, userId, updateData) {
+    let lockAcquired = false;
     try {
-      // Get current task for version check
-      const currentTask = await this._taskRepository.findById(taskId);
-      if (!currentTask) {
-        await this._lockingService.releaseLock(taskId, userId);
-        return null;
+      // Try to acquire lock first
+      lockAcquired = await taskRepository.acquireLock(taskId, userId);
+      if (!lockAcquired) {
+        throw new Error('Task is locked by another user');
       }
 
-      // Notify all users that the task is locked
-      this._socketService.emitTaskLocked(taskId, userId);
-
-      // Update with version check
-      const updatedTask = await this._taskRepository.update(
-        taskId,
-        {
-          ...updateData,
-          version: currentTask.version + 1
-        }
-      );
-
-      await this._lockingService.releaseLock(taskId, userId);
-      if (!updatedTask) {
-        throw new Error('Failed to update task - version mismatch');
-      }
-
-    
-      
- 
-      
-      // Notify all users about the update
-      this._socketService.emitTaskUpdated(updatedTask);
-      
-      return updatedTask;
+      // Update the task (lock will be released automatically)
+      const task = await taskRepository.updateTask(taskId, userId, updateData);
+      socketService.emitTaskUpdated(task);
+      return task;
     } catch (error) {
-      // Ensure lock is released in case of any error
-      await this._lockingService.releaseLock(taskId, userId);
+      // Only release lock if we acquired it and an error occurred
+      if (lockAcquired) {
+        await taskRepository.releaseLock(taskId, userId);
+      }
       throw error;
     }
   }
 
   async deleteTask(taskId, userId) {
-    // Try to acquire lock first
-    const lockAcquired = await this._lockingService.acquireLock(taskId, userId);
-    if (!lockAcquired) {
-      throw new Error('Task is locked by another user');
-    }
-
+    let lockAcquired = false;
     try {
-      // Notify all users that the task is locked for deletion
-      this._socketService.emitTaskLocked(taskId, userId);
-
-      const result = await this._taskRepository.delete(taskId);
-      await this._lockingService.releaseLock(taskId, userId);
-      if (!result) {
-        return null;
+      // Try to acquire lock first
+      lockAcquired = await taskRepository.acquireLock(taskId, userId);
+      if (!lockAcquired) {
+        throw new Error('Task is locked by another user');
       }
-      
-      // Notify all users that the task has been deleted
-      this._socketService.emitTaskDeleted(taskId);
-      
-      return result;
+
+      // Delete the task (lock will be released automatically)
+      const task = await taskRepository.deleteTask(taskId, userId);
+      socketService.emitTaskDeleted(taskId);
+      return task;
     } catch (error) {
-      // Ensure lock is released in case of any error
-      await this._lockingService.releaseLock(taskId, userId);
+      // Only release lock if we acquired it and an error occurred
+      if (lockAcquired) {
+        await taskRepository.releaseLock(taskId, userId);
+      }
       throw error;
     }
   }
-
-  async isTaskLocked(id) {
-    return this._lockingService.isLocked(id);
-  }
 }
 
-// Export a singleton instance
-module.exports = new TaskService(); 
+module.exports = TaskService.getInstance(); 
