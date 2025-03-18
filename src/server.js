@@ -8,7 +8,6 @@ const authRoutes = require('./routes/auth.routes');
 const taskRoutes = require('./routes/task.routes');
 const { authenticateSocket } = require('./middleware/auth.middleware');
 const socketService = require('./services/socket.service');
-
 console.log('Starting server...');
 
 // Create Express app
@@ -31,6 +30,7 @@ console.log('Socket service initialized');
 // Middleware
 app.use(cors());
 app.use(express.json());
+
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI)

@@ -3,7 +3,7 @@ const controllerFactory = require('../factories/controller.factory');
 const { authenticateToken } = require('../middleware/auth.middleware');
 
 const router = express.Router();
-const userController = controllerFactory.createUserController();
+const userController = controllerFactory.userController;
 
 // Public routes
 router.post('/register', userController.register.bind(userController));

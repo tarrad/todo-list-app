@@ -3,7 +3,7 @@ const controllerFactory = require('../factories/controller.factory');
 const { authenticateToken } = require('../middleware/auth.middleware');
 
 const router = express.Router();
-const taskController = controllerFactory.createTaskController();
+const taskController = controllerFactory.taskController;
 
 // Apply auth middleware to all routes
 router.use(authenticateToken);
