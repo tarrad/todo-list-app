@@ -1,46 +1,19 @@
 const jwt = require('jsonwebtoken');
 
 class UserController {
-  constructor(userRepository) {
-    this._userRepository = userRepository;
+  constructor(userService) {
+    this._userService = userService;
   }
 
   async register(req, res) {
     try {
-      const { email, password , name} = req.body;
-
-      // Check if user already exists
-     
-      // Create new user
-      // Check if user already exists
-      const exists = await this._userRepository.exists(email);
-      if (exists) {
-        return res.status(400).json({ error: 'User already exists' });
-      }
-
-      // Create new user
-      const user = await this._userRepository.create({
-        email,
-        password, // Password will be hashed by the model's pre-save hook
-        name
-      });
-
-      // Generate JWT token
-      const token = jwt.sign(
-        { userId: user._id },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-
-      res.status(201).json({
-        token,
-        user: {
-          id: user._id,
-          email: user.email
-        }
-      });
+      const result = await this._userService.register(req.body);
+      res.status(201).json(result);
     } catch (error) {
       console.error('Registration error:', error);
+      if (error.message === 'User already exists') {
+        return res.status(400).json({ error: error.message });
+      }
       res.status(500).json({ error: 'Failed to register user' });
     }
   }
@@ -48,35 +21,13 @@ class UserController {
   async login(req, res) {
     try {
       const { email, password } = req.body;
-
-      // Find user by email
-      const user = await this._userRepository.findByEmail(email);
-      if (!user) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-
-      // Check password
-      const isValid = await user.comparePassword(password);
-      if (!isValid) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-
-      // Generate JWT token
-      const token = jwt.sign(
-        { userId: user._id },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-
-      res.json({
-        token,
-        user: {
-          id: user._id,
-          email: user.email
-        }
-      });
+      const result = await this._userService.login(email, password);
+      res.json(result);
     } catch (error) {
       console.error('Login error:', error);
+      if (error.message === 'Invalid credentials') {
+        return res.status(401).json({ error: error.message });
+      }
       res.status(500).json({ error: 'Failed to login' });
     }
   }

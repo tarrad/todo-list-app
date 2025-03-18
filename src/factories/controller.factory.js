@@ -4,8 +4,8 @@
  */
 const TaskController = require('../controllers/task.controller');
 const UserController = require('../controllers/user.controller');
-const taskRepository = require('../repositories/task.repository');
-const userRepository = require('../repositories/user.repository');
+const taskService = require('../services/task.service');
+const userService = require('../services/user.service');
 
 class ControllerFactory {
   constructor() {
@@ -44,7 +44,7 @@ class ControllerFactory {
    * @returns {UserController} Singleton instance of UserController
    */
   createUserController() {
-    return this.createController(UserController, userRepository, 'user');
+    return this.createController(UserController, userService, 'user');
   }
 
   /**
@@ -52,7 +52,7 @@ class ControllerFactory {
    * @returns {TaskController} Singleton instance of TaskController
    */
   createTaskController() {
-    return this.createController(TaskController, taskRepository, 'task');
+    return this.createController(TaskController, taskService, 'task');
   }
 }
 

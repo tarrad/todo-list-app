@@ -1,13 +1,13 @@
 const TaskDTO = require('../dtos/task.dto');
 
 class TaskController {
-  constructor(taskRepository) {
-    this._taskRepository = taskRepository;
+  constructor(taskService) {
+    this._taskService = taskService;
   }
 
   async getAllTasks(req, res) {
     try {
-      const tasks = await this._taskRepository.findAllTasks();
+      const tasks = await this._taskService.getAllTasks();
       const taskDTOs = TaskDTO.fromTasks(tasks);
       res.json(taskDTOs);
     } catch (error) {
@@ -18,7 +18,7 @@ class TaskController {
 
   async createTask(req, res) {
     try {
-      const task = await this._taskRepository.create(req.body);
+      const task = await this._taskService.createTask(req.body);
       const taskDTO = TaskDTO.fromTask(task);
       res.status(201).json(taskDTO);
     } catch (error) {
@@ -29,7 +29,7 @@ class TaskController {
 
   async updateTask(req, res) {
     try {
-      const task = await this._taskRepository.update(req.params.id, req.body, req.user._id);
+      const task = await this._taskService.updateTask(req.params.id, req.body, req.user._id);
       if (!task) {
         return res.status(404).json({ error: 'Task not found' });
       }
@@ -46,16 +46,10 @@ class TaskController {
 
   async deleteTask(req, res) {
     try {
-      const task = await this._taskRepository.findById(req.params.id);
+      const task = await this._taskService.deleteTask(req.params.id, req.user._id);
       if (!task) {
         return res.status(404).json({ error: 'Task not found' });
       }
-
-      const deletedTask = await this._taskRepository.delete(req.params.id, req.user._id);
-      if (!deletedTask) {
-        return res.status(404).json({ error: 'Task not found' });
-      }
-      const taskDTO = TaskDTO.fromTask(deletedTask);
       res.json({ message: 'Task deleted successfully' });
     } catch (error) {
       console.error('Error deleting task:', error);
