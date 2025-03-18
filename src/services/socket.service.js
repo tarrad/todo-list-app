@@ -2,54 +2,59 @@ const TaskDTO = require('../dtos/task.dto');
 
 class SocketService {
   constructor() {
-    this._io = null;
+    if (SocketService.instance) {
+      return SocketService.instance;
+    }
+    SocketService.instance = this;
+  }
+
+  static getInstance() {
+    if (!SocketService.instance) {
+      SocketService.instance = new SocketService();
+    }
+    return SocketService.instance;
   }
 
   initialize(io) {
     this._io = io;
   }
 
-  emit(event, data) {
-    if (!this._io) {
-      console.warn('Socket.IO not initialized');
-      return;
-    }
-    this._io.emit(event, data);
-  }
-
-  to(socket) {
-    if (!this._io) {
-      console.warn('Socket.IO not initialized');
-      return {
-        emit: () => {}
-      };
-    }
-    return {
-      emit: (event, data) => socket.emit(event, data)
-    };
-  }
-
-  // Task-specific events
-  emitTaskLocked(taskId, userId) {
-    this.emit('taskLocked', { taskId, userId });
-  }
-
-  emitTaskUnlocked(taskId) {
-    this.emit('taskUnlocked', { taskId });
-  }
-
-  emitTaskDeleted(taskId) {
-    this.emit('taskDeleted', { taskId });
+  emitTaskCreated(task) {
+    const taskDTO = TaskDTO.fromTask(task);
+    this._io.emit('taskCreated', { 
+      task: taskDTO,
+      userId: task.userId
+    });
   }
 
   emitTaskUpdated(task) {
-    this.emit('taskUpdated', TaskDTO.fromTask(task));
+    const taskDTO = TaskDTO.fromTask(task);
+    this._io.emit('taskUpdated', { 
+      task: taskDTO,
+      userId: task.lockedBy
+    });
   }
 
-  emitTaskCreated(task) {
-    this.emit('taskCreated', TaskDTO.fromTask(task));
+  emitTaskDeleted(taskId, userId) {
+    this._io.emit('taskDeleted', { 
+      taskId,
+      userId
+    });
+  }
+
+  emitTaskLocked(taskId, userId) {
+    this._io.emit('taskLocked', { 
+      taskId,
+      userId
+    });
+  }
+
+  emitTaskUnlocked(taskId, userId) {
+    this._io.emit('taskUnlocked', { 
+      taskId,
+      userId
+    });
   }
 }
 
-// Export a singleton instance
-module.exports = new SocketService(); 
+module.exports = SocketService.getInstance(); 
