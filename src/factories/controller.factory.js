@@ -2,6 +2,11 @@
  * ControllerFactory implements the Factory pattern with Singleton controllers
  * This ensures we have exactly one instance of each controller type throughout the application
  */
+const TaskController = require('../controllers/task.controller');
+const UserController = require('../controllers/user.controller');
+const taskRepository = require('../repositories/task.repository');
+const userRepository = require('../repositories/user.repository');
+
 class ControllerFactory {
   constructor() {
     // Singleton pattern for the factory itself
@@ -9,8 +14,14 @@ class ControllerFactory {
       return ControllerFactory.instance;
     }
     ControllerFactory.instance = this;
-    // Map to store singleton instances of different controllers
     this._controllers = new Map();
+  }
+
+  static getInstance() {
+    if (!ControllerFactory.instance) {
+      ControllerFactory.instance = new ControllerFactory();
+    }
+    return ControllerFactory.instance;
   }
 
   /**
@@ -30,25 +41,20 @@ class ControllerFactory {
 
   /**
    * Creates or retrieves the singleton UserController instance
-   * @param {Object} userRepository - Repository for user operations
    * @returns {UserController} Singleton instance of UserController
    */
-  createUserController(userRepository) {
-    const UserController = require('../controllers/user.controller');
-    return this.createController(UserController, { userRepository }, 'user');
+  createUserController() {
+    return this.createController(UserController, userRepository, 'user');
   }
 
   /**
    * Creates or retrieves the singleton TaskController instance
-   * @param {Object} taskRepository - Repository for task operations
-   * @param {Object} socketService - Service for real-time updates
    * @returns {TaskController} Singleton instance of TaskController
    */
-  createTaskController(taskRepository, socketService) {
-    const TaskController = require('../controllers/task.controller');
-    return this.createController(TaskController, { taskRepository, socketService }, 'task');
+  createTaskController() {
+    return this.createController(TaskController, taskRepository, 'task');
   }
 }
 
 // Export a singleton instance of the factory
-module.exports = new ControllerFactory(); 
+module.exports = ControllerFactory.getInstance();

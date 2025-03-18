@@ -7,8 +7,11 @@ class UserController {
 
   async register(req, res) {
     try {
-      const { email, password } = req.body;
+      const { email, password , name} = req.body;
 
+      // Check if user already exists
+     
+      // Create new user
       // Check if user already exists
       const exists = await this._userRepository.exists(email);
       if (exists) {
@@ -18,7 +21,8 @@ class UserController {
       // Create new user
       const user = await this._userRepository.create({
         email,
-        password // Password will be hashed by the model's pre-save hook
+        password, // Password will be hashed by the model's pre-save hook
+        name
       });
 
       // Generate JWT token

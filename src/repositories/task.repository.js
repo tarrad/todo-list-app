@@ -94,4 +94,5 @@ class TaskRepository {
   }
 }
 
-module.exports = TaskRepository; 
+// Export a singleton instance
+module.exports = new TaskRepository(); 

@@ -1,9 +1,8 @@
 const TaskDTO = require('../dtos/task.dto');
 
 class TaskController {
-  constructor({ taskRepository, socketService }) {
+  constructor(taskRepository) {
     this._taskRepository = taskRepository;
-    this._socketService = socketService;
   }
 
   async getAllTasks(req, res) {
@@ -21,7 +20,6 @@ class TaskController {
     try {
       const task = await this._taskRepository.create(req.body);
       const taskDTO = TaskDTO.fromTask(task);
-      this._socketService.emit('taskCreated', taskDTO);
       res.status(201).json(taskDTO);
     } catch (error) {
       console.error('Error creating task:', error);
@@ -36,7 +34,6 @@ class TaskController {
         return res.status(404).json({ error: 'Task not found' });
       }
       const taskDTO = TaskDTO.fromTask(task);
-      this._socketService.emit('taskUpdated', taskDTO);
       res.json(taskDTO);
     } catch (error) {
       console.error('Error updating task:', error);
@@ -59,7 +56,6 @@ class TaskController {
         return res.status(404).json({ error: 'Task not found' });
       }
       const taskDTO = TaskDTO.fromTask(deletedTask);
-      this._socketService.emit('taskDeleted', taskDTO);
       res.json({ message: 'Task deleted successfully' });
     } catch (error) {
       console.error('Error deleting task:', error);
