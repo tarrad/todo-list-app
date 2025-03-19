@@ -19,9 +19,7 @@ class TaskService {
   }
 
   async resetAllLocks() {
-    console.log('TaskService: Resetting all task locks...');
     const result = await this._taskRepository.resetAllLocks();
-    console.log(`TaskService: Reset ${result.modifiedCount} locked tasks`);
     return result;
   }
 
@@ -40,7 +38,6 @@ class TaskService {
   }
 
   async updateTask(taskId, userId, updateData) {
-    console.log('TaskService updateTask called with:', { taskId, userId, updateData });
 
     const task = await this._taskRepository.getTaskById(taskId);
     

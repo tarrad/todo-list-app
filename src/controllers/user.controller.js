@@ -3,7 +3,18 @@ const RegisterResponseDTO = require('../dtos/registerRes.dto');
 
 class UserController {
   constructor(userService) {
+    if (UserController.instance) {
+      return UserController.instance;
+    }
+    UserController.instance = this;
     this._userService = userService;
+  }
+
+  static getInstance(userService) {
+    if (!UserController.instance) {
+      UserController.instance = new UserController(userService);
+    }
+    return UserController.instance;
   }
 
   async register(req, res) {

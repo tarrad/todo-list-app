@@ -3,7 +3,18 @@ const jwt = require('jsonwebtoken');
 
 class UserService {
   constructor() {
+    if (UserService.instance) {
+      return UserService.instance;
+    }
+    UserService.instance = this;
     this._userRepository = userRepository;
+  }
+
+  static getInstance() {
+    if (!UserService.instance) {
+      UserService.instance = new UserService();
+    }
+    return UserService.instance;
   }
 
   async register(userData) {
@@ -21,9 +32,6 @@ class UserService {
       password, // Password will be hashed by the model's pre-save hook
       name
     });
-
-    // Generate JWT token
-    
 
     return {
       user,
@@ -58,10 +66,7 @@ class UserService {
         name: user.name
       }
     };
-
-    
   }
 }
 
-// Export a singleton instance
-module.exports = new UserService();
+module.exports = UserService.getInstance();

@@ -64,7 +64,12 @@ io.on('connection', (socket) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT, 10) || 3000;
+if (isNaN(PORT)) {
+  console.error('Invalid PORT in environment variables');
+  process.exit(1);
+}
+
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('WebSocket server is ready for connections');

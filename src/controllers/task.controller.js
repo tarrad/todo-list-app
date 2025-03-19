@@ -55,8 +55,6 @@ class TaskController {
       res.json(taskDTO);
     } catch (error) {
       if (error.message === 'Task is locked by another user') {
-        console.log(error.message);
-        console.log(GenericResponseDTO.fromGeneric(error.message, false));
         return res.status(409).json(GenericResponseDTO.fromGeneric(error.message, false));
       }
       if (error.message === 'Cannot edit a completed task') {
