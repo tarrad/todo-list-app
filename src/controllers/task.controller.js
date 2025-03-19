@@ -29,10 +29,10 @@ class TaskController {
 
   async createTask(req, res) {
     try {
-      console.log("creeate task body : " + req.body);
-      console.log( req.body);
-      console.log("creeate task body : end " );
-      const task = await this._taskService.createTask(req.body);
+      const task = await this._taskService.createTask({
+        ...req.body,
+        userId: req.user.userId
+      });
       const taskDTO = TaskDTO.fromTask(task);
       res.status(201).json(taskDTO);
     } catch (error) {
@@ -43,12 +43,9 @@ class TaskController {
 
   async updateTask(req, res) {
     try {
-      console.log("update task body : " + req.body);
-      console.log( req.body);
-      console.log("update task body : end " );
       const task = await this._taskService.updateTask(
         req.params.id,
-        req.user.id,
+        req.user.userId,
         req.body
       );
       if (!task) {
@@ -67,7 +64,7 @@ class TaskController {
 
   async deleteTask(req, res) {
     try {
-      await this._taskService.deleteTask(req.params.id, req.user.id);
+      await this._taskService.deleteTask(req.params.id, req.user.userId);
       res.json({ message: 'Task deleted successfully' });
     } catch (error) {
       console.error('Error deleting task:', error);
