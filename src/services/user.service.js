@@ -23,19 +23,10 @@ class UserService {
     });
 
     // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_TIME  }
-    );
+    
 
     return {
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name
-      }
+      user,
     };
   }
 
@@ -67,6 +58,8 @@ class UserService {
         name: user.name
       }
     };
+
+    
   }
 }
 

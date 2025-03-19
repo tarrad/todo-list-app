@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const UserDTO = require('../dtos/user.dto');
 
 class UserController {
   constructor(userService) {
@@ -7,8 +8,9 @@ class UserController {
 
   async register(req, res) {
     try {
-      const result = await this._userService.register(req.body);
-      res.status(201).json(result);
+      const user = await this._userService.register(req.body);
+      const response = UserDTO.fromRegister(user);
+      res.status(201).json(response.toJSON());
     } catch (error) {
       console.error('Registration error:', error);
       if (error.message === 'User already exists') {
@@ -21,8 +23,9 @@ class UserController {
   async login(req, res) {
     try {
       const { email, password } = req.body;
-      const result = await this._userService.login(email, password);
-      res.json(result);
+      const { user, token } = await this._userService.login(email, password);
+      const response = UserDTO.fromLogin(user, token);
+      res.json(response.toJSON());
     } catch (error) {
       console.error('Login error:', error);
       if (error.message === 'Invalid credentials') {
