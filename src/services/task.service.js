@@ -19,13 +19,13 @@ class TaskService {
   }
 
   async createTask(taskData) {
-    const task = await this._taskRepository.create(taskData);
+    const task = await this._taskRepository.createTask(taskData);
     this._socketService.emitTaskCreated(task, taskData.userId);
     return task;
   }
 
   async getTasks() {
-    return await this._taskRepository.findAll();
+    return await this._taskRepository.getTasks();
   }
 
   async getTaskById(taskId) {
@@ -33,7 +33,8 @@ class TaskService {
   }
 
   async updateTask(taskId, userId, updateData) {
-    const task = await this._taskRepository.findById(taskId);
+
+    const task = await this._taskRepository.getTaskById(taskId);
     
     if (!task) {
       throw new Error('Task not found');
@@ -43,10 +44,6 @@ class TaskService {
       throw new Error('Cannot edit a completed task');
     }
 
-    if (task.userId.toString() !== userId) {
-      throw new Error('Not authorized to update this task');
-    }
-
     let lockAcquired = false;
     try {
       // Try to acquire lock first
@@ -54,9 +51,9 @@ class TaskService {
       if (!lockAcquired) {
         throw new Error('Task is locked by another user');
       }
-
+      
       // Update the task (lock will be released automatically)
-      const updatedTask = await this._taskRepository.update(taskId, updateData);
+      const updatedTask = await this._taskRepository.updateTask(taskId, userId, updateData);
       this._socketService.emitTaskUpdated(updatedTask, userId);
       return updatedTask;
     } catch (error) {
@@ -69,14 +66,10 @@ class TaskService {
   }
 
   async deleteTask(taskId, userId) {
-    const task = await this._taskRepository.findById(taskId);
+    const task = await this._taskRepository.getTaskById(taskId);
     
     if (!task) {
       throw new Error('Task not found');
-    }
-
-    if (task.userId.toString() !== userId) {
-      throw new Error('Not authorized to delete this task');
     }
 
     let lockAcquired = false;
@@ -88,7 +81,7 @@ class TaskService {
       }
 
       // Delete the task (lock will be released automatically)
-      const deletedTask = await this._taskRepository.delete(taskId);
+      const deletedTask = await this._taskRepository.deleteTask(taskId, userId);
       this._socketService.emitTaskDeleted(taskId);
       return deletedTask;
     } catch (error) {

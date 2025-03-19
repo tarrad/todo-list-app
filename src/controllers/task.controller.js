@@ -1,4 +1,5 @@
 const TaskDTO = require('../dtos/task.dto');
+const GenericResponseDTO =  require('../dtos/genericRes.dto');
 
 class TaskController {
   constructor(taskService) {
@@ -22,71 +23,57 @@ class TaskController {
       const taskDTOs = TaskDTO.fromTasks(tasks);
       res.json(taskDTOs);
     } catch (error) {
-      console.error('Error getting tasks:', error);
-      res.status(500).json({ error: 'Failed to get tasks' });
+      console.error(error);
+      res.status(500).json(GenericResponseDTO.fromGeneric('Failed to get tasks', false));
     }
   }
 
   async createTask(req, res) {
     try {
-      console.log("create task body : " + req.body);
-      console.log(req.body);
-      console.log("create task body : end ");
       const task = await this._taskService.createTask({
         ...req.body,
         userId: req.user.userId
       });
       const taskDTO = TaskDTO.fromTask(task);
-      res.status(201).json(taskDTO.toJSON());
+      res.json(taskDTO);
     } catch (error) {
-      console.error('Error creating task:', error);
-      res.status(500).json({ error: 'Failed to create task' });
+      res.status(500).json(GenericResponseDTO.fromGeneric('Failed to create task', false));
     }
   }
 
   async updateTask(req, res) {
-    try {
-      console.log("update task body : " + req.body);
-      console.log(req.body);
-      console.log("update task body : end ");
+    try {  
       const task = await this._taskService.updateTask(
         req.params.id,
         req.user.userId,
         req.body
       );
       if (!task) {
-        return res.status(404).json({ error: 'Task not found' });
+        return res.status(404).json(GenericResponseDTO.fromGeneric('Task not found', false));
       }
       const taskDTO = TaskDTO.fromTask(task);
-      res.json(taskDTO.toJSON());
+      res.json(taskDTO);
     } catch (error) {
-      console.error('Error updating task:', error);
       if (error.message === 'Task is locked by another user') {
-        return res.status(409).json({ error: error.message });
+        return res.status(409).json(GenericResponseDTO.fromGeneric(error.message, false));
       }
       if (error.message === 'Cannot edit a completed task') {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json(GenericResponseDTO.fromGeneric(error.message, false));
       }
-      if (error.message === 'Not authorized to update this task') {
-        return res.status(403).json({ error: error.message });
-      }
-      res.status(500).json({ error: 'Failed to update task' });
+      res.status(500).json(GenericResponseDTO.fromGeneric('Failed to update task', false));
     }
   }
 
   async deleteTask(req, res) {
     try {
       await this._taskService.deleteTask(req.params.id, req.user.userId);
-      res.json({ message: 'Task deleted successfully' });
+      res.json(GenericResponseDTO.fromGeneric('Task deleted successfully', true));
     } catch (error) {
-      console.error('Error deleting task:', error);
+      console.error(error);
       if (error.message === 'Task is locked by another user') {
-        return res.status(409).json({ error: error.message });
+        return res.status(409).json(GenericResponseDTO.fromGeneric(error.message, false));
       }
-      if (error.message === 'Not authorized to delete this task') {
-        return res.status(403).json({ error: error.message });
-      }
-      res.status(500).json({ error: 'Failed to delete task' });
+      res.status(500).json(GenericResponseDTO.fromGeneric('Failed to delete task', false));
     }
   }
 }

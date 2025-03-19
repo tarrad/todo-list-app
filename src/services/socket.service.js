@@ -42,19 +42,7 @@ class SocketService {
     });
   }
 
-  emitTaskLocked(taskId, userId) {
-    this._io.emit('taskLocked', { 
-      taskId,
-      userId
-    });
-  }
 
-  emitTaskUnlocked(taskId, userId) {
-    this._io.emit('taskUnlocked', { 
-      taskId,
-      userId
-    });
-  }
 }
 
 module.exports = SocketService.getInstance(); 

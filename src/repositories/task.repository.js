@@ -60,6 +60,7 @@ class TaskRepository {
   }
 
   async updateTask(taskId, userId, updateData) {
+    
     // Update task and release lock in a single atomic operation
     const task = await Task.findOneAndUpdate(
       { 

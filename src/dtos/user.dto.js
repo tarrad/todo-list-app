@@ -1,19 +1,17 @@
-class UserDTO {
-  constructor(user, token) {
+class UserLoginDTO {
+  constructor(user, token, error) {
     this.user = {
       id: user._id,
       email: user.email,
       name: user.name
     };
     this.token = token;
+    this.error = error;
   }
 
-  static fromRegister(user) {
-    return new UserDTO(user, null);
-  }
 
-  static fromLogin(user, token) {
-    return new UserDTO(user, token);
+  static fromLogin(user, token, error) {
+    return new UserLoginDTO(user, token, error);
   }
 
   toJSON() {
@@ -24,4 +22,4 @@ class UserDTO {
   }
 }
 
-module.exports = UserDTO; 
+module.exports = UserLoginDTO; 
