@@ -1,5 +1,4 @@
 const TaskDTO = require('../dtos/task.dto');
-const TaskService = require('../services/task.service');
 
 class TaskController {
   constructor(taskService) {
@@ -30,6 +29,9 @@ class TaskController {
 
   async createTask(req, res) {
     try {
+      console.log("creeate task body : " + req.body);
+      console.log( req.body);
+      console.log("creeate task body : end " );
       const task = await this._taskService.createTask(req.body);
       const taskDTO = TaskDTO.fromTask(task);
       res.status(201).json(taskDTO);
@@ -41,6 +43,9 @@ class TaskController {
 
   async updateTask(req, res) {
     try {
+      console.log("update task body : " + req.body);
+      console.log( req.body);
+      console.log("update task body : end " );
       const task = await this._taskService.updateTask(
         req.params.id,
         req.user.id,

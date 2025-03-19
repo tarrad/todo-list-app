@@ -18,7 +18,7 @@ class TaskService {
 
   async createTask(taskData) {
     const task = await taskRepository.createTask(taskData);
-    socketService.emitTaskCreated(task);
+    socketService.emitTaskCreated(task, taskData.userId);
     return task;
   }
 
@@ -37,7 +37,7 @@ class TaskService {
 
       // Update the task (lock will be released automatically)
       const task = await taskRepository.updateTask(taskId, userId, updateData);
-      socketService.emitTaskUpdated(task);
+      socketService.emitTaskUpdated(task,userId);
       return task;
     } catch (error) {
       // Only release lock if we acquired it and an error occurred

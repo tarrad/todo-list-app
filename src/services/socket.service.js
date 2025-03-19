@@ -19,19 +19,19 @@ class SocketService {
     this._io = io;
   }
 
-  emitTaskCreated(task) {
+  emitTaskCreated(task, userId) {
     const taskDTO = TaskDTO.fromTask(task);
     this._io.emit('taskCreated', { 
       task: taskDTO,
-      userId: task.userId
+      userId: userId
     });
   }
 
-  emitTaskUpdated(task) {
+  emitTaskUpdated(task, userId) {
     const taskDTO = TaskDTO.fromTask(task);
     this._io.emit('taskUpdated', { 
       task: taskDTO,
-      userId: task.lockedBy
+      userId: userId
     });
   }
 
