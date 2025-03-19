@@ -15,6 +15,16 @@ class TaskRepository {
     return TaskRepository.instance;
   }
 
+  async resetAllLocks() {
+    console.log('Resetting all task locks...');
+    const result = await Task.updateMany(
+      { lockedBy: { $ne: null } },
+      { $set: { lockedBy: null } }
+    );
+    console.log(`Reset ${result.modifiedCount} locked tasks`);
+    return result;
+  }
+
   async createTask(taskData) {
     const task = new Task(taskData);
     return await task.save();
@@ -30,6 +40,7 @@ class TaskRepository {
 
   async acquireLock(taskId, userId) {
     // Try to acquire lock using atomic operation
+    console.log('Acquiring lock for user:', userId);
     const task = await Task.findOneAndUpdate(
       { 
         _id: taskId,
@@ -60,6 +71,7 @@ class TaskRepository {
   }
 
   async updateTask(taskId, userId, updateData) {
+    console.log('Update task called with:', { taskId, userId, updateData });
     
     // Update task and release lock in a single atomic operation
     const task = await Task.findOneAndUpdate(

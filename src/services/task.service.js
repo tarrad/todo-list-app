@@ -18,6 +18,13 @@ class TaskService {
     return TaskService.instance;
   }
 
+  async resetAllLocks() {
+    console.log('TaskService: Resetting all task locks...');
+    const result = await this._taskRepository.resetAllLocks();
+    console.log(`TaskService: Reset ${result.modifiedCount} locked tasks`);
+    return result;
+  }
+
   async createTask(taskData) {
     const task = await this._taskRepository.createTask(taskData);
     this._socketService.emitTaskCreated(task, taskData.userId);
@@ -33,6 +40,7 @@ class TaskService {
   }
 
   async updateTask(taskId, userId, updateData) {
+    console.log('TaskService updateTask called with:', { taskId, userId, updateData });
 
     const task = await this._taskRepository.getTaskById(taskId);
     
@@ -51,7 +59,7 @@ class TaskService {
       if (!lockAcquired) {
         throw new Error('Task is locked by another user');
       }
-      
+
       // Update the task (lock will be released automatically)
       const updatedTask = await this._taskRepository.updateTask(taskId, userId, updateData);
       this._socketService.emitTaskUpdated(updatedTask, userId);

@@ -8,6 +8,8 @@ const authRoutes = require('./routes/auth.routes');
 const taskRoutes = require('./routes/task.routes');
 const { authenticateSocket } = require('./middleware/auth.middleware');
 const socketService = require('./services/socket.service');
+const taskService = require('./services/task.service');
+
 console.log('Starting server...');
 
 // Create Express app
@@ -31,10 +33,13 @@ console.log('Socket service initialized');
 app.use(cors());
 app.use(express.json());
 
-
 // Database connection
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
+  .then(async () => {
+    console.log('Connected to MongoDB');
+    // Reset any existing task locks on server startup
+    await taskService.resetAllLocks();
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Routes
