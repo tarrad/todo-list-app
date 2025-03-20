@@ -8,20 +8,20 @@ A simple todo list application built with Node.js, Express, MongoDB, and Socket.
 
 1. Install dependencies:
 npm install
-```
+
 
 2. Create a `.env` file in the root directory with:
-```
+
 PORT=3000
 MONGODB_URI=mongodb://localhost:27017/todo-list-app
 JWT_SECRET=wt_secret
 JWT_EXPIRES_IN=24h
-```
+
 
 3. Start the server:
 
 npm start
-```
+
 
 ## How the Locking System Works
 
@@ -35,10 +35,10 @@ The app uses MongoDB's atomic operations to prevent race conditions when multipl
 
 2. How Atomic Operations Work:
    - When User A tries to edit a task:
-     ```javascript
+     javascript
      
      Using findOneAndUpdate
-     ```
+     
    - If User B tries to edit the same task at the same time:
      - MongoDB will process one request first
      - The second request will fail because the `lockedBy` field is no longer `null`
@@ -56,15 +56,15 @@ The app uses MongoDB's atomic operations to prevent race conditions when multipl
      - The user cancels the edit
      - The server restarts (all locks are reset)
    - The release is also an atomic operation:
-     ```javascript
+     javascript
      // This is also atomic - safe from race conditions
      Using findOneAndUpdate
-     ```
+     
 
 
 ## Altenative
 
- - We can use Redis as the gatekeeper for managing locks, which is highly recommended in distributed systems or server environments.
+ - We can use Redis or Kafka as the gatekeeper for managing locks, which is highly recommended in distributed systems or server environments.
 
 
 ## API Endpoints
